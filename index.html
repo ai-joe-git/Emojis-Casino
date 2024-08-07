@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emoji Casino</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #1a1a1a;
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+        #casino {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .game {
+            font-size: 3rem;
+            margin: 20px;
+            padding: 20px;
+            background-color: #2a2a2a;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(255,255,255,0.1);
+            transition: transform 0.3s ease;
+            cursor: pointer;
+        }
+        .game:hover {
+            transform: scale(1.05);
+        }
+        #roulette, #slot-machine, #poker {
+            display: none;
+        }
+        .roulette-wheel {
+            font-size: 5rem;
+            animation: spin 5s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .slot-reel {
+            display: inline-block;
+            font-size: 4rem;
+            margin: 0 10px;
+            animation: slotSpin 0.5s linear infinite;
+        }
+        @keyframes slotSpin {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(-100%); }
+        }
+        .poker-card {
+            display: inline-block;
+            font-size: 4rem;
+            margin: 0 5px;
+            transition: transform 0.3s ease;
+        }
+        .poker-card:hover {
+            transform: translateY(-20px);
+        }
+        button {
+            font-size: 1.2rem;
+            padding: 10px 20px;
+            margin-top: 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #back-button {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            font-size: 1rem;
+            padding: 5px 10px;
+            background-color: #f44336;
+        }
+        #back-button:hover {
+            background-color: #d32f2f;
+        }
+        #result {
+            font-size: 1.5rem;
+            margin-top: 20px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div id="casino">
+        <button id="back-button" onclick="showMenu()" style="display: none;">Back to Menu</button>
+        <div id="menu">
+            <div class="game" onclick="showGame('roulette')">🎰 Roulette</div>
+            <div class="game" onclick="showGame('slot-machine')">🎰 Slot Machine</div>
+            <div class="game" onclick="showGame('poker')">🃏 Poker</div>
+        </div>
+        <div id="roulette">
+            <h2>Roulette</h2>
+            <div class="roulette-wheel">🔴⚫🔴⚫🔴⚫</div>
+            <button onclick="spinRoulette()">Spin</button>
+            <div id="result"></div>
+        </div>
+        <div id="slot-machine">
+            <h2>Slot Machine</h2>
+            <div class="slot-reel">🍒</div>
+            <div class="slot-reel">🍋</div>
+            <div class="slot-reel">🍇</div>
+            <br>
+            <button onclick="spinSlotMachine()">Spin</button>
+            <div id="result"></div>
+        </div>
+        <div id="poker">
+            <h2>Poker</h2>
+            <div class="poker-card">🂡</div>
+            <div class="poker-card">🂮</div>
+            <div class="poker-card">🂫</div>
+            <div class="poker-card">🂪</div>
+            <div class="poker-card">🂩</div>
+            <br>
+            <button onclick="dealPoker()">Deal</button>
+            <div id="result"></div>
+        </div>
+    </div>
+    <script>
+        function showMenu() {
+            document.getElementById('menu').style.display = 'block';
+            document.getElementById('roulette').style.display = 'none';
+            document.getElementById('slot-machine').style.display = 'none';
+            document.getElementById('poker').style.display = 'none';
+            document.getElementById('back-button').style.display = 'none';
+        }
+
+        function showGame(game) {
+            document.getElementById('menu').style.display = 'none';
+            document.getElementById(game).style.display = 'block';
+            document.getElementById('back-button').style.display = 'block';
+        }
+
+        function spinRoulette() {
+            const wheel = document.querySelector('.roulette-wheel');
+            wheel.style.animation = 'none';
+            wheel.offsetHeight; // Trigger reflow
+            wheel.style.animation = 'spin 5s linear infinite';
+            
+            setTimeout(() => {
+                const result = Math.random() < 0.5 ? '🔴 Red' : '⚫ Black';
+                document.querySelector('#roulette #result').textContent = `Result: ${result}`;
+            }, 5000);
+        }
+
+        function spinSlotMachine() {
+            const reels = document.querySelectorAll('.slot-reel');
+            const results = [];
+            reels.forEach(reel => {
+                reel.style.animation = 'none';
+                reel.offsetHeight; // Trigger reflow
+                reel.style.animation = 'slotSpin 0.5s linear infinite';
+                setTimeout(() => {
+                    reel.style.animation = 'none';
+                    const fruit = getRandomFruit();
+                    reel.textContent = fruit;
+                    results.push(fruit);
+                    if (results.length === 3) {
+                        checkSlotResult(results);
+                    }
+                }, Math.random() * 1000 + 1000);
+            });
+        }
+
+        function getRandomFruit() {
+            const fruits = ['🍒', '🍋', '🍇', '🍊', '🍉', '🍓'];
+            return fruits[Math.floor(Math.random() * fruits.length)];
+        }
+
+        function checkSlotResult(results) {
+            if (results[0] === results[1] && results[1] === results[2]) {
+                document.querySelector('#slot-machine #result').textContent = 'Jackpot! 🎉';
+            } else if (results[0] === results[1] || results[1] === results[2] || results[0] === results[2]) {
+                document.querySelector('#slot-machine #result').textContent = 'Two of a kind! 🎉';
+            } else {
+                document.querySelector('#slot-machine #result').textContent = 'Try again!';
+            }
+        }
+
+        function dealPoker() {
+            const cards = document.querySelectorAll('.poker-card');
+            const suits = ['♠️', '♥️', '♦️', '♣️'];
+            const values = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+            const dealtCards = [];
+            cards.forEach(card => {
+                let suit, value;
+                do {
+                    suit = suits[Math.floor(Math.random() * suits.length)];
+                    value = values[Math.floor(Math.random() * values.length)];
+                } while (dealtCards.includes(value + suit));
+                dealtCards.push(value + suit);
+                card.textContent = value + suit;
+            });
+            checkPokerHand(dealtCards);
+        }
+
+        function checkPokerHand(hand) {
+            // This is a simple check for a pair only. You can expand this to check for other hands.
+            const values = hand.map(card => card.slice(0, -2));
+            const uniqueValues = new Set(values);
+            if (uniqueValues.size < 5) {
+                document.querySelector('#poker #result').textContent = 'You have a pair!';
+            } else {
+                document.querySelector('#poker #result').textContent = 'No pair, try again!';
+            }
+        }
+    </script>
+</body>
+</html>
