@@ -3,222 +3,397 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Emoji Casino</title>
+    <title>Futuristic Endless Runner</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
-            background-color: #1a1a1a;
-            color: #fff;
+            margin: 0;
+            padding: 0;
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
-            margin: 0;
+            background-color: #000;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
             overflow: hidden;
         }
-        #casino {
+        canvas {
+            border: 1px solid #333;
+        }
+        #startScreen, #gameOverScreen {
+            position: absolute;
+            width: 100%;
+            height: 100%;
             display: flex;
             flex-direction: column;
+            justify-content: center;
             align-items: center;
-        }
-        .game {
-            font-size: 3rem;
-            margin: 20px;
-            padding: 20px;
-            background-color: #2a2a2a;
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(255,255,255,0.1);
-            transition: transform 0.3s ease;
-            cursor: pointer;
-        }
-        .game:hover {
-            transform: scale(1.05);
-        }
-        #roulette, #slot-machine, #poker {
-            display: none;
-        }
-        .roulette-wheel {
-            font-size: 5rem;
-            animation: spin 5s linear infinite;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        .slot-reel {
-            display: inline-block;
-            font-size: 4rem;
-            margin: 0 10px;
-            animation: slotSpin 0.5s linear infinite;
-        }
-        @keyframes slotSpin {
-            0% { transform: translateY(0); }
-            100% { transform: translateY(-100%); }
-        }
-        .poker-card {
-            display: inline-block;
-            font-size: 4rem;
-            margin: 0 5px;
-            transition: transform 0.3s ease;
-        }
-        .poker-card:hover {
-            transform: translateY(-20px);
+            background-color: rgba(0, 0, 0, 0.8);
+            color: #fff;
+            font-size: 24px;
         }
         button {
-            font-size: 1.2rem;
-            padding: 10px 20px;
             margin-top: 20px;
-            background-color: #4CAF50;
-            color: white;
+            padding: 10px 20px;
+            font-size: 18px;
+            background-color: #007AFF;
+            color: #fff;
             border: none;
             border-radius: 5px;
             cursor: pointer;
-            transition: background-color 0.3s ease;
-        }
-        button:hover {
-            background-color: #45a049;
-        }
-        #back-button {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            font-size: 1rem;
-            padding: 5px 10px;
-            background-color: #f44336;
-        }
-        #back-button:hover {
-            background-color: #d32f2f;
-        }
-        #result {
-            font-size: 1.5rem;
-            margin-top: 20px;
-            text-align: center;
         }
     </style>
 </head>
 <body>
-    <div id="casino">
-        <button id="back-button" onclick="showMenu()" style="display: none;">Back to Menu</button>
-        <div id="menu">
-            <div class="game" onclick="showGame('roulette')">🎰 Roulette</div>
-            <div class="game" onclick="showGame('slot-machine')">🎰 Slot Machine</div>
-            <div class="game" onclick="showGame('poker')">🃏 Poker</div>
-        </div>
-        <div id="roulette">
-            <h2>Roulette</h2>
-            <div class="roulette-wheel">🔴⚫🔴⚫🔴⚫</div>
-            <button onclick="spinRoulette()">Spin</button>
-            <div id="result"></div>
-        </div>
-        <div id="slot-machine">
-            <h2>Slot Machine</h2>
-            <div class="slot-reel">🍒</div>
-            <div class="slot-reel">🍋</div>
-            <div class="slot-reel">🍇</div>
-            <br>
-            <button onclick="spinSlotMachine()">Spin</button>
-            <div id="result"></div>
-        </div>
-        <div id="poker">
-            <h2>Poker</h2>
-            <div class="poker-card">🂡</div>
-            <div class="poker-card">🂮</div>
-            <div class="poker-card">🂫</div>
-            <div class="poker-card">🂪</div>
-            <div class="poker-card">🂩</div>
-            <br>
-            <button onclick="dealPoker()">Deal</button>
-            <div id="result"></div>
-        </div>
+    <canvas id="gameCanvas"></canvas>
+    <div id="startScreen">
+        <h1>Futuristic Endless Runner</h1>
+        <button id="startButton">Start Game</button>
+    </div>
+    <div id="gameOverScreen" style="display: none;">
+        <h1>Game Over</h1>
+        <p>Your Score: <span id="finalScore"></span></p>
+        <button id="restartButton">Restart</button>
     </div>
     <script>
-        function showMenu() {
-            document.getElementById('menu').style.display = 'block';
-            document.getElementById('roulette').style.display = 'none';
-            document.getElementById('slot-machine').style.display = 'none';
-            document.getElementById('poker').style.display = 'none';
-            document.getElementById('back-button').style.display = 'none';
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const startScreen = document.getElementById('startScreen');
+        const gameOverScreen = document.getElementById('gameOverScreen');
+        const startButton = document.getElementById('startButton');
+        const restartButton = document.getElementById('restartButton');
+        const finalScoreElement = document.getElementById('finalScore');
+
+        canvas.width = 800;
+        canvas.height = 400;
+
+        let gameState = 'start';
+        let score = 0;
+        let highScore = 0;
+
+        const bgMusic = new Audio('https://example.com/bg_music.mp3');
+        bgMusic.loop = true;
+        const jumpSound = new Audio('https://example.com/jump_sound.mp3');
+        const collectSound = new Audio('https://example.com/collect_sound.mp3');
+        const crashSound = new Audio('https://example.com/crash_sound.mp3');
+
+        class ParticleSystem {
+            constructor() {
+                this.particles = [];
+            }
+
+            addParticle(x, y, color) {
+                this.particles.push({
+                    x, y,
+                    size: Math.random() * 5 + 2,
+                    speedX: Math.random() * 3 - 1.5,
+                    speedY: Math.random() * 3 - 1.5,
+                    color: color,
+                    life: 1
+                });
+            }
+
+            update() {
+                this.particles = this.particles.filter(p => p.life > 0);
+                this.particles.forEach(p => {
+                    p.x += p.speedX;
+                    p.y += p.speedY;
+                    p.life -= 0.02;
+                });
+            }
+
+            draw() {
+                this.particles.forEach(p => {
+                    ctx.globalAlpha = p.life;
+                    ctx.fillStyle = p.color;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+                ctx.globalAlpha = 1;
+            }
         }
 
-        function showGame(game) {
-            document.getElementById('menu').style.display = 'none';
-            document.getElementById(game).style.display = 'block';
-            document.getElementById('back-button').style.display = 'block';
-        }
+        class Background {
+            constructor(speed) {
+                this.x = 0;
+                this.y = 0;
+                this.width = canvas.width;
+                this.height = canvas.height;
+                this.speed = speed;
+                this.buildings = [];
+                this.generateBuildings();
+            }
 
-        function spinRoulette() {
-            const wheel = document.querySelector('.roulette-wheel');
-            wheel.style.animation = 'none';
-            wheel.offsetHeight; // Trigger reflow
-            wheel.style.animation = 'spin 5s linear infinite';
-            
-            setTimeout(() => {
-                const result = Math.random() < 0.5 ? '🔴 Red' : '⚫ Black';
-                document.querySelector('#roulette #result').textContent = `Result: ${result}`;
-            }, 5000);
-        }
+            generateBuildings() {
+                for (let i = 0; i < 40; i++) {
+                    this.buildings.push({
+                        x: i * 60,
+                        height: Math.random() * 200 + 100,
+                        width: Math.random() * 40 + 20,
+                        color: `rgba(0, ${Math.floor(Math.random() * 155 + 100)}, ${Math.floor(Math.random() * 155 + 100)}, ${Math.random() * 0.5 + 0.1})`
+                    });
+                }
+            }
 
-        function spinSlotMachine() {
-            const reels = document.querySelectorAll('.slot-reel');
-            const results = [];
-            reels.forEach(reel => {
-                reel.style.animation = 'none';
-                reel.offsetHeight; // Trigger reflow
-                reel.style.animation = 'slotSpin 0.5s linear infinite';
-                setTimeout(() => {
-                    reel.style.animation = 'none';
-                    const fruit = getRandomFruit();
-                    reel.textContent = fruit;
-                    results.push(fruit);
-                    if (results.length === 3) {
-                        checkSlotResult(results);
+            update() {
+                this.x -= this.speed;
+                if (this.x <= -this.width) this.x = 0;
+            }
+
+            draw() {
+                // Sky gradient
+                const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+                gradient.addColorStop(0, '#001933');
+                gradient.addColorStop(1, '#0066CC');
+                ctx.fillStyle = gradient;
+                ctx.fillRect(this.x, this.y, this.width, this.height);
+                ctx.fillRect(this.x + this.width, this.y, this.width, this.height);
+
+                // Stars
+                ctx.fillStyle = 'white';
+                for (let i = 0; i < 100; i++) {
+                    ctx.beginPath();
+                    ctx.arc((this.x + Math.random() * this.width * 2) % this.width, Math.random() * this.height / 2, Math.random() * 2, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                // Buildings
+                this.buildings.forEach(building => {
+                    const buildingX = (this.x + building.x) % this.width;
+                    
+                    ctx.fillStyle = building.color;
+                    ctx.fillRect(buildingX, this.height - building.height, building.width, building.height);
+                    
+                    // Windows
+                    for (let j = 0; j < 5; j++) {
+                        for (let k = 0; k < 3; k++) {
+                            ctx.fillStyle = 'rgba(255, 255, 0, 0.5)';
+                            ctx.fillRect(buildingX + 5 + k * 10, this.height - building.height + 10 + j * 40, 5, 20);
+                        }
                     }
-                }, Math.random() * 1000 + 1000);
-            });
-        }
-
-        function getRandomFruit() {
-            const fruits = ['🍒', '🍋', '🍇', '🍊', '🍉', '🍓'];
-            return fruits[Math.floor(Math.random() * fruits.length)];
-        }
-
-        function checkSlotResult(results) {
-            if (results[0] === results[1] && results[1] === results[2]) {
-                document.querySelector('#slot-machine #result').textContent = 'Jackpot! 🎉';
-            } else if (results[0] === results[1] || results[1] === results[2] || results[0] === results[2]) {
-                document.querySelector('#slot-machine #result').textContent = 'Two of a kind! 🎉';
-            } else {
-                document.querySelector('#slot-machine #result').textContent = 'Try again!';
+                });
             }
         }
 
-        function dealPoker() {
-            const cards = document.querySelectorAll('.poker-card');
-            const suits = ['♠️', '♥️', '♦️', '♣️'];
-            const values = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
-            const dealtCards = [];
-            cards.forEach(card => {
-                let suit, value;
-                do {
-                    suit = suits[Math.floor(Math.random() * suits.length)];
-                    value = values[Math.floor(Math.random() * values.length)];
-                } while (dealtCards.includes(value + suit));
-                dealtCards.push(value + suit);
-                card.textContent = value + suit;
-            });
-            checkPokerHand(dealtCards);
-        }
+        class Hovercar {
+            constructor() {
+                this.x = 50;
+                this.y = canvas.height / 2;
+                this.width = 80;
+                this.height = 30;
+                this.speed = 0;
+                this.gravity = 0.5;
+                this.lift = -10;
+                this.particleSystem = new ParticleSystem();
+            }
 
-        function checkPokerHand(hand) {
-            // This is a simple check for a pair only. You can expand this to check for other hands.
-            const values = hand.map(card => card.slice(0, -2));
-            const uniqueValues = new Set(values);
-            if (uniqueValues.size < 5) {
-                document.querySelector('#poker #result').textContent = 'You have a pair!';
-            } else {
-                document.querySelector('#poker #result').textContent = 'No pair, try again!';
+            update() {
+                this.speed += this.gravity;
+                this.y += this.speed;
+
+                if (this.y + this.height > canvas.height) {
+                    this.y = canvas.height - this.height;
+                    this.speed = 0;
+                }
+
+                if (this.y < 0) {
+                    this.y = 0;
+                    this.speed = 0;
+                }
+
+                this.particleSystem.update();
+                for (let i = 0; i < 2; i++) {
+                    this.particleSystem.addParticle(this.x, this.y + this.height, 'rgba(0, 255, 255, 0.5)');
+                }
+            }
+
+            draw() {
+                this.particleSystem.draw();
+
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+                ctx.beginPath();
+                ctx.ellipse(this.x + this.width / 2, this.y + this.height / 2, this.width / 2, this.height / 2, 0, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = 'rgba(0, 255, 255, 0.5)';
+                ctx.beginPath();
+                ctx.ellipse(this.x + this.width / 2, this.y + this.height / 2, this.width / 2 - 5, this.height / 2 - 5, 0, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Reflection
+                ctx.globalAlpha = 0.3;
+                ctx.scale(1, -1);
+                ctx.translate(0, -canvas.height);
+                ctx.beginPath();
+                ctx.ellipse(this.x + this.width / 2, canvas.height - this.y - this.height / 2, this.width / 2, this.height / 2, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.setTransform(1, 0, 0, 1, 0, 0);
+                ctx.globalAlpha = 1;
+            }
+
+            jump() {
+                this.speed += this.lift;
+                jumpSound.play();
             }
         }
+
+        class Obstacle {
+            constructor(x, y, width, height) {
+                this.x = x;
+                this.y = y;
+                this.width = width;
+                this.height = height;
+                this.speed = 5;
+            }
+
+            update() {
+                this.x -= this.speed;
+            }
+
+            draw() {
+                ctx.fillStyle = 'red';
+                ctx.fillRect(this.x, this.y, this.width, this.height);
+            }
+        }
+
+        class PowerUp {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.width = 20;
+                this.height = 20;
+                this.speed = 5;
+            }
+
+            update() {
+                this.x -= this.speed;
+            }
+
+            draw() {
+                ctx.fillStyle = 'gold';
+                ctx.beginPath();
+                ctx.arc(this.x + this.width / 2, this.y + this.height / 2, this.width / 2, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        const background = new Background(2);
+        const hovercar = new Hovercar();
+        let obstacles = [];
+        let powerUps = [];
+
+        function spawnObstacle() {
+            const height = Math.random() * 100 + 50;
+            obstacles.push(new Obstacle(canvas.width, canvas.height - height, 30, height));
+        }
+
+        function spawnPowerUp() {
+            powerUps.push(new PowerUp(canvas.width, Math.random() * (canvas.height - 40) + 20));
+        }
+
+        function checkCollisions() {
+            // Obstacle collisions
+            for (let obstacle of obstacles) {
+                if (
+                    hovercar.x < obstacle.x + obstacle.width &&
+                    hovercar.x + hovercar.width > obstacle.x &&
+                    hovercar.y < obstacle.y + obstacle.height &&
+                    hovercar.y + hovercar.height > obstacle.y
+                ) {
+                    gameOver();
+                }
+            }
+
+            // Power-up collisions
+            for (let i = powerUps.length - 1; i >= 0; i--) {
+                if (
+                    hovercar.x < powerUps[i].x + powerUps[i].width &&
+                    hovercar.x + hovercar.width > powerUps[i].x &&
+                    hovercar.y < powerUps[i].y + powerUps[i].height &&
+                    hovercar.y + hovercar.height > powerUps[i].y
+                ) {
+                    score += 10;
+                    collectSound.play();
+                    powerUps.splice(i, 1);
+                }
+            }
+        }
+
+        function gameOver() {
+            crashSound.play();
+            gameState = 'gameOver';
+            bgMusic.pause();
+            bgMusic.currentTime = 0;
+            finalScoreElement.textContent = score;
+            gameOverScreen.style.display = 'flex';
+        }
+
+        function resetGame() {
+            score = 0;
+            obstacles = [];
+            powerUps = [];
+            hovercar.y = canvas.height / 2;
+            hovercar.speed = 0;
+            gameState = 'playing';
+            bgMusic.play();
+        }
+
+        function gameLoop() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            background.update();
+            background.draw();
+
+            if (gameState === 'playing') {
+                hovercar.update();
+                hovercar.draw();
+
+                obstacles.forEach(obstacle => {
+                    obstacle.update();
+                    obstacle.draw();
+                });
+
+                powerUps.forEach(powerUp => {
+                    powerUp.update();
+                    powerUp.draw();
+                });
+
+                if (Math.random() < 0.02) spawnObstacle();
+                if (Math.random() < 0.01) spawnPowerUp();
+
+                obstacles = obstacles.filter(obstacle => obstacle.x + obstacle.width > 0);
+                powerUps = powerUps.filter(powerUp => powerUp.x + powerUp.width > 0);
+
+                checkCollisions();
+
+                score++;
+
+                ctx.fillStyle = 'white';
+                ctx.font = '20px Arial';
+                ctx.fillText(`Score: ${score}`, 10, 30);
+                ctx.fillText(`High Score: ${highScore}`, canvas.width - 150, 30);
+            }
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        document.addEventListener('keydown', (event) => {
+            if (event.code === 'Space' && gameState === 'playing') {
+                hovercar.jump();
+            }
+        });
+
+        startButton.addEventListener('click', () => {
+            startScreen.style.display = 'none';
+            resetGame();
+        });
+
+        restartButton.addEventListener('click', () => {
+            gameOverScreen.style.display = 'none';
+            resetGame();
+        });
+
+        gameLoop();
     </script>
 </body>
 </html>
